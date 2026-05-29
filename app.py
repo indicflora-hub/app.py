@@ -7,9 +7,10 @@ st.title("Joint Point & Crossing Inspection")
 
 # 1. Initialize Session State
 if 'data' not in st.session_state:
+    # Based on your requested format:
+    # PT NO | TYPE | SIDE | OPENING | HOUSING | JOH/CLR | LOC | GAUGE | LEVEL | REMARKS
     st.session_state.data = pd.DataFrame(columns=[
-        "PT NO.", "TYPE", "SIDE", "LOC", 
-        "OPENING", "HOUSING", "JOH/CLR", "GAUGE", "LEVEL", "REMARKS"
+        "PT NO.", "TYPE", "SIDE", "OPENING", "HOUSING", "JOH/CLR", "LOC", "GAUGE", "LEVEL", "REMARKS"
     ])
 
 # 2. Entry Form
@@ -23,6 +24,7 @@ with st.form(key="inspection_form_main"):
     
     jc_label = "JOH" if point_type == "TWS" else "Clearance"
     
+    # Side-specific inputs
     st.subheader("General Point Data (Per Side)")
     c1, c2 = st.columns(2)
     with c1:
@@ -36,7 +38,7 @@ with st.form(key="inspection_form_main"):
         rh_ho = st.number_input("RH Housing", step=1)
         rh_jc = st.number_input(f"RH {jc_label}", step=1)
 
-    # UPDATED: Gauge & Level are now text_input to allow alphanumeric/symbols
+    # Location-based inputs (Not side-specific, Alphanumeric allowed)
     st.subheader("Gauge & Level Measurements (Per Location)")
     locs = ["150 mm", "5th Sleeper", "9th Sleeper"]
     loc_data = {}
@@ -53,22 +55,22 @@ with st.form(key="inspection_form_main"):
 # 3. Data Processing
 if submitted and pt_no:
     rows = []
-    # Create LH row
+    # LH Side Row
     rows.append({
-        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "LH", "LOC": "N/A",
-        "OPENING": lh_op, "HOUSING": lh_ho, "JOH/CLR": lh_jc, "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
+        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "LH", "OPENING": lh_op, "HOUSING": lh_ho, 
+        "JOH/CLR": lh_jc, "LOC": "N/A", "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
     })
-    # Create RH row
+    # RH Side Row
     rows.append({
-        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "RH", "LOC": "N/A",
-        "OPENING": rh_op, "HOUSING": rh_ho, "JOH/CLR": rh_jc, "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
+        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "RH", "OPENING": rh_op, "HOUSING": rh_ho, 
+        "JOH/CLR": rh_jc, "LOC": "N/A", "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
     })
-    # Create Location rows
+    # Location rows (Gauge/Level only)
     for loc in locs:
         rows.append({
-            "PT NO.": pt_no, "TYPE": point_type, "SIDE": "N/A", "LOC": loc,
-            "OPENING": "N/A", "HOUSING": "N/A", "JOH/CLR": "N/A", 
-            "GAUGE": loc_data[(loc, "G")], "LEVEL": loc_data[(loc, "L")], "REMARKS": remarks
+            "PT NO.": pt_no, "TYPE": point_type, "SIDE": "N/A", "OPENING": "N/A", "HOUSING": "N/A", 
+            "JOH/CLR": "N/A", "LOC": loc, "GAUGE": loc_data[(loc, "G")], 
+            "LEVEL": loc_data[(loc, "L")], "REMARKS": remarks
         })
         
     st.session_state.data = pd.concat([st.session_state.data, pd.DataFrame(rows)], ignore_index=True)
