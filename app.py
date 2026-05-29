@@ -508,7 +508,6 @@ if st.session_state.data:
         mime="application/pdf"
     )
 
-```
 
 ## Main Changes Done
 
