@@ -1,6 +1,6 @@
 # Updated Streamlit Code – Joint Point & Crossing Inspection
 
-```python
+python
 import streamlit as st
 import pandas as pd
 from fpdf import FPDF
