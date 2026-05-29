@@ -21,10 +21,8 @@ with st.form(key="inspection_form_main"):
     with col_b:
         point_type = st.radio("Point Type", ["TWS", "IRS"], horizontal=True)
     
-    # Context-aware label
     jc_label = "JOH" if point_type == "TWS" else "Clearance"
     
-    # Side-specific inputs
     st.subheader("General Point Data (Per Side)")
     c1, c2 = st.columns(2)
     with c1:
@@ -38,7 +36,7 @@ with st.form(key="inspection_form_main"):
         rh_ho = st.number_input("RH Housing", step=1)
         rh_jc = st.number_input(f"RH {jc_label}", step=1)
 
-    # Location-based inputs (Not side-specific)
+    # UPDATED: Gauge & Level are now text_input to allow alphanumeric/symbols
     st.subheader("Gauge & Level Measurements (Per Location)")
     locs = ["150 mm", "5th Sleeper", "9th Sleeper"]
     loc_data = {}
@@ -46,8 +44,8 @@ with st.form(key="inspection_form_main"):
     for loc in locs:
         st.write(f"**{loc}**")
         g1, l1 = st.columns(2)
-        loc_data[(loc, "G")] = g1.number_input(f"Gauge ({loc})", step=1, key=f"g_{loc}")
-        loc_data[(loc, "L")] = l1.number_input(f"Level ({loc})", step=1, key=f"l_{loc}")
+        loc_data[(loc, "G")] = g1.text_input(f"Gauge ({loc})", key=f"g_{loc}", placeholder="e.g. +2mm")
+        loc_data[(loc, "L")] = l1.text_input(f"Level ({loc})", key=f"l_{loc}", placeholder="e.g. -1mm")
 
     remarks = st.text_area("Remarks")
     submitted = st.form_submit_button("Save Inspection")
