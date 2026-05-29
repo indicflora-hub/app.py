@@ -10,59 +10,50 @@ st.title("Joint Point & Crossing Inspection")
 if 'data' not in st.session_state:
     st.session_state.data = []
 
-# Function to clear form
-def clear_form():
-    st.session_state["edit_index"] = None
-
-# 2. Edit/Add Toggle
+# 2. Entry/Edit Form
 edit_index = st.session_state.get("edit_index", None)
-mode = "Edit Entry" if edit_index is not None else "New Entry"
-st.header(mode)
-
-# Load data for editing if an index is selected
-default_data = st.session_state.data[edit_index] if edit_index is not None else None
-
 with st.form(key="main_form"):
     col1, col2 = st.columns(2)
-    pt_no = col1.text_input("Point No.", value=default_data['pt'] if default_data else "")
-    p_type = col2.radio("Point Type", ["TWS", "IRS"], index=0 if not default_data or default_data['type']=="TWS" else 1, horizontal=True)
+    pt_no = col1.text_input("Point No.", value=st.session_state.data[edit_index]['pt'] if edit_index is not None else "")
+    p_type = col2.radio("Point Type", ["TWS", "IRS"], index=0 if edit_index is None or st.session_state.data[edit_index]['type']=="TWS" else 1, horizontal=True)
     
     jc_label = "JOH" if p_type == "TWS" else "Clearance"
-    
     s1, s2 = st.columns(2)
-    lh = {"op": s1.number_input("LH Opening", value=default_data['lh']['op'] if default_data else 0), 
-          "ho": s1.number_input("LH Housing", value=default_data['lh']['ho'] if default_data else 0), 
-          "jc": s1.number_input(f"LH {jc_label}", value=default_data['lh']['jc'] if default_data else 0)}
-    rh = {"op": s2.number_input("RH Opening", value=default_data['rh']['op'] if default_data else 0), 
-          "ho": s2.number_input("RH Housing", value=default_data['rh']['ho'] if default_data else 0), 
-          "jc": s2.number_input(f"RH {jc_label}", value=default_data['rh']['jc'] if default_data else 0)}
+    lh = {"op": s1.number_input("LH Opening", value=st.session_state.data[edit_index]['lh']['op'] if edit_index is not None else 0), 
+          "ho": s1.number_input("LH Housing", value=st.session_state.data[edit_index]['lh']['ho'] if edit_index is not None else 0), 
+          "jc": s1.number_input(f"LH {jc_label}", value=st.session_state.data[edit_index]['lh']['jc'] if edit_index is not None else 0)}
+    rh = {"op": s2.number_input("RH Opening", value=st.session_state.data[edit_index]['rh']['op'] if edit_index is not None else 0), 
+          "ho": s2.number_input("RH Housing", value=st.session_state.data[edit_index]['rh']['ho'] if edit_index is not None else 0), 
+          "jc": s2.number_input(f"RH {jc_label}", value=st.session_state.data[edit_index]['rh']['jc'] if edit_index is not None else 0)}
     
-    st.write("---")
-    locs = ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]
     loc_inputs = {}
-    for loc in locs:
+    for loc in ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]:
         g, l = st.columns(2)
-        val_g = default_data['locs'][loc]['g'] if default_data else ""
-        val_l = default_data['locs'][loc]['l'] if default_data else ""
-        loc_inputs[loc] = {"g": g.text_input(f"Gauge {loc}", value=val_g), "l": l.text_input(f"Level {loc}", value=val_l)}
+        v = st.session_state.data[edit_index]['locs'][loc] if edit_index is not None else {'g':'', 'l':''}
+        loc_inputs[loc] = {"g": g.text_input(f"Gauge {loc}", value=v['g']), "l": l.text_input(f"Level {loc}", value=v['l'])}
     
-    remarks = st.text_area("Remarks", value=default_data['rem'] if default_data else "")
+    remarks = st.text_area("Remarks", value=st.session_state.data[edit_index]['rem'] if edit_index is not None else "")
     submitted = st.form_submit_button("Save Changes" if edit_index is not None else "Add Entry")
 
 if submitted:
-    new_entry = {"pt": pt_no, "type": p_type, "lh": lh, "rh": rh, "locs": loc_inputs, "rem": remarks}
-    if edit_index is not None:
-        st.session_state.data[edit_index] = new_entry
-        st.session_state["edit_index"] = None
-    else:
-        st.session_state.data.append(new_entry)
+    entry = {"pt": pt_no, "type": p_type, "lh": lh, "rh": rh, "locs": loc_inputs, "rem": remarks}
+    if edit_index is not None: st.session_state.data[edit_index] = entry
+    else: st.session_state.data.append(entry)
+    st.session_state["edit_index"] = None
     st.rerun()
 
-# 3. List view for selection
+# 3. View, Search, and Edit Window
 st.subheader("Saved Records")
+search = st.text_input("🔍 Search Point No.")
 for i, entry in enumerate(st.session_state.data):
-    c1, c2 = st.columns([0.8, 0.2])
-    c1.write(f"Point {entry['pt']} - {entry['type']}")
-    if c2.button("Edit", key=f"edit_{i}"):
-        st.session_state["edit_index"] = i
-        st.rerun()
+    if search.lower() in entry['pt'].lower():
+        with st.expander(f"Point {entry['pt']} - {entry['type']}"):
+            st.write(f"LH: Op:{entry['lh']['op']} | RH: Op:{entry['rh']['op']}")
+            c1, c2 = st.columns(2)
+            if c1.button("Edit", key=f"e{i}"):
+                st.session_state["edit_index"] = i
+                st.rerun()
+            if c2.button("Delete", key=f"d{i}"):
+                st.session_state.data.pop(i)
+                st.rerun()
+
