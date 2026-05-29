@@ -1,59 +1,55 @@
 import streamlit as st
 import pandas as pd
+from fpdf import FPDF
+import io
 
 st.set_page_config(layout="wide")
 st.title("Joint Point & Crossing Inspection")
 
-# 1. Initialize State
 if 'data' not in st.session_state:
     st.session_state.data = []
 
-# 2. Entry/Edit Form
-edit_index = st.session_state.get("edit_index", None)
-with st.form(key="main_form"):
-    col1, col2 = st.columns(2)
-    pt_no = col1.text_input("Point No.", value=st.session_state.data[edit_index]['pt'] if edit_index is not None else "")
-    p_type = col2.radio("Point Type", ["TWS", "IRS"], index=0 if edit_index is None or st.session_state.data[edit_index]['type']=="TWS" else 1, horizontal=True)
+with st.form("entry_form"):
+    c1, c2 = st.columns(2)
+    pt = c1.text_input("Point No.")
+    typ = c2.radio("Type", ["TWS", "IRS"], horizontal=True)
     
-    jc_label = "JOH" if p_type == "TWS" else "Clearance"
-    s1, s2 = st.columns(2)
-    lh = {"op": s1.number_input("LH Opening", value=st.session_state.data[edit_index]['lh']['op'] if edit_index is not None else 0), 
-          "ho": s1.number_input("LH Housing", value=st.session_state.data[edit_index]['lh']['ho'] if edit_index is not None else 0), 
-          "jc": s1.number_input(f"LH {jc_label}", value=st.session_state.data[edit_index]['lh']['jc'] if edit_index is not None else 0)}
-    rh = {"op": s2.number_input("RH Opening", value=st.session_state.data[edit_index]['rh']['op'] if edit_index is not None else 0), 
-          "ho": s2.number_input("RH Housing", value=st.session_state.data[edit_index]['rh']['ho'] if edit_index is not None else 0), 
-          "jc": s2.number_input(f"RH {jc_label}", value=st.session_state.data[edit_index]['rh']['jc'] if edit_index is not None else 0)}
+    label = "JOH" if typ == "TWS" else "Clearance"
     
-    loc_inputs = {}
-    for loc in ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]:
-        g, l = st.columns(2)
-        v = st.session_state.data[edit_index]['locs'][loc] if edit_index is not None else {'g':'', 'l':''}
-        loc_inputs[loc] = {"g": g.text_input(f"Gauge {loc}", value=v['g']), "l": l.text_input(f"Level {loc}", value=v['l'])}
+    col_lh, col_rh = st.columns(2)
+    lh = {"op": col_lh.number_input("LH Op"), "ho": col_lh.number_input("LH Ho"), "jc": col_lh.number_input(f"LH {label}")}
+    rh = {"op": col_rh.number_input("RH Op"), "ho": col_rh.number_input("RH Ho"), "jc": col_rh.number_input(f"RH {label}")}
     
-    remarks = st.text_area("Remarks", value=st.session_state.data[edit_index]['rem'] if edit_index is not None else "")
-    submitted = st.form_submit_button("Save Changes" if edit_index is not None else "Add Entry")
+    locs = ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]
+    loc_data = {}
+    for l in locs:
+        g, le = st.columns(2)
+        loc_data[l] = {"g": g.text_input(f"Gauge {l}"), "le": le.text_input(f"Level {l}")}
+    
+    rem = st.text_area("Remarks")
+    if st.form_submit_button("Save"):
+        st.session_state.data.append({"pt": pt, "type": typ, "lh": lh, "rh": rh, "locs": loc_data, "rem": rem})
+        st.rerun()
 
-if submitted:
-    entry = {"pt": pt_no, "type": p_type, "lh": lh, "rh": rh, "locs": loc_inputs, "rem": remarks}
-    if edit_index is not None: st.session_state.data[edit_index] = entry
-    else: st.session_state.data.append(entry)
-    st.session_state["edit_index"] = None
-    st.rerun()
+st.subheader("Records")
+for i, entry in enumerate(st.session_state.data):
+    st.write(f"Point: {entry['pt']} | Type: {entry['type']}")
+    if st.button(f"Delete Record {i+1}"):
+        st.session_state.data.pop(i)
+        st.rerun()
 
-# 3. View Window with Scrollable Container
-st.subheader("Inspection Records View")
-search = st.text_input("🔍 Search Point No.")
+# PDF Generator
+def make_pdf(data):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 12)
+    for entry in data:
+        pdf.cell(200, 10, txt=f"Point: {entry['pt']} ({entry['type']})", ln=True)
+        pdf.set_font("Arial", '', 10)
+        pdf.cell(200, 7, txt=f"LH Opening: {entry['lh']['op']} | RH Opening: {entry['rh']['op']}", ln=True)
+        pdf.cell(200, 7, txt=f"Remarks: {entry['rem']}", ln=True)
+        pdf.ln(5)
+    return pdf.output(dest='S').encode('latin-1')
 
-# This container acts as the 'view window' with a scroll bar if data is long
-with st.container(height=400): 
-    for i, entry in enumerate(st.session_state.data):
-        if search.lower() in entry['pt'].lower():
-            cols = st.columns([0.6, 0.2, 0.2])
-            cols[0].write(f"**Point {entry['pt']}** ({entry['type']})")
-            if cols[1].button("Edit", key=f"e{i}"):
-                st.session_state["edit_index"] = i
-                st.rerun()
-            if cols[2].button("Delete", key=f"d{i}"):
-                st.session_state.data.pop(i)
-                st.rerun()
-            st.divider()
+if st.session_state.data:
+    st.download_button("Download PDF", data=make_pdf(st.session_state.data), file_name="report.pdf", mime="application/pdf")
