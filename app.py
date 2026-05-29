@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-from fpdf import FPDF
-import io
 
 st.set_page_config(layout="wide")
 st.title("Joint Point & Crossing Inspection")
@@ -42,18 +40,20 @@ if submitted:
     st.session_state["edit_index"] = None
     st.rerun()
 
-# 3. View, Search, and Edit Window
-st.subheader("Saved Records")
+# 3. View Window with Scrollable Container
+st.subheader("Inspection Records View")
 search = st.text_input("🔍 Search Point No.")
-for i, entry in enumerate(st.session_state.data):
-    if search.lower() in entry['pt'].lower():
-        with st.expander(f"Point {entry['pt']} - {entry['type']}"):
-            st.write(f"LH: Op:{entry['lh']['op']} | RH: Op:{entry['rh']['op']}")
-            c1, c2 = st.columns(2)
-            if c1.button("Edit", key=f"e{i}"):
+
+# This container acts as the 'view window' with a scroll bar if data is long
+with st.container(height=400): 
+    for i, entry in enumerate(st.session_state.data):
+        if search.lower() in entry['pt'].lower():
+            cols = st.columns([0.6, 0.2, 0.2])
+            cols[0].write(f"**Point {entry['pt']}** ({entry['type']})")
+            if cols[1].button("Edit", key=f"e{i}"):
                 st.session_state["edit_index"] = i
                 st.rerun()
-            if c2.button("Delete", key=f"d{i}"):
+            if cols[2].button("Delete", key=f"d{i}"):
                 st.session_state.data.pop(i)
                 st.rerun()
-
+            st.divider()
