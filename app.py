@@ -1,91 +1,68 @@
 import streamlit as st
 import pandas as pd
+from fpdf import FPDF
 import io
 
 st.set_page_config(layout="wide")
 st.title("Joint Point & Crossing Inspection")
 
-# 1. Initialize Session State
+# 1. Initialize State
 if 'data' not in st.session_state:
-    # Based on your requested format:
-    # PT NO | TYPE | SIDE | OPENING | HOUSING | JOH/CLR | LOC | GAUGE | LEVEL | REMARKS
-    st.session_state.data = pd.DataFrame(columns=[
-        "PT NO.", "TYPE", "SIDE", "OPENING", "HOUSING", "JOH/CLR", "LOC", "GAUGE", "LEVEL", "REMARKS"
-    ])
+    st.session_state.data = []
 
-# 2. Entry Form
-st.header("Inspection Entry")
-with st.form(key="inspection_form_main"):
-    col_a, col_b = st.columns(2)
-    with col_a:
-        pt_no = st.text_input("Point No.")
-    with col_b:
-        point_type = st.radio("Point Type", ["TWS", "IRS"], horizontal=True)
-    
-    jc_label = "JOH" if point_type == "TWS" else "Clearance"
-    
-    # Side-specific inputs
-    st.subheader("General Point Data (Per Side)")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.write("### LH Side")
-        lh_op = st.number_input("LH Opening", step=1)
-        lh_ho = st.number_input("LH Housing", step=1)
-        lh_jc = st.number_input(f"LH {jc_label}", step=1)
-    with c2:
-        st.write("### RH Side")
-        rh_op = st.number_input("RH Opening", step=1)
-        rh_ho = st.number_input("RH Housing", step=1)
-        rh_jc = st.number_input(f"RH {jc_label}", step=1)
+# Function to clear form
+def clear_form():
+    st.session_state["edit_index"] = None
 
-    # Location-based inputs (Not side-specific, Alphanumeric allowed)
-    st.subheader("Gauge & Level Measurements (Per Location)")
-    locs = ["150 mm", "5th Sleeper", "9th Sleeper"]
-    loc_data = {}
+# 2. Edit/Add Toggle
+edit_index = st.session_state.get("edit_index", None)
+mode = "Edit Entry" if edit_index is not None else "New Entry"
+st.header(mode)
+
+# Load data for editing if an index is selected
+default_data = st.session_state.data[edit_index] if edit_index is not None else None
+
+with st.form(key="main_form"):
+    col1, col2 = st.columns(2)
+    pt_no = col1.text_input("Point No.", value=default_data['pt'] if default_data else "")
+    p_type = col2.radio("Point Type", ["TWS", "IRS"], index=0 if not default_data or default_data['type']=="TWS" else 1, horizontal=True)
     
+    jc_label = "JOH" if p_type == "TWS" else "Clearance"
+    
+    s1, s2 = st.columns(2)
+    lh = {"op": s1.number_input("LH Opening", value=default_data['lh']['op'] if default_data else 0), 
+          "ho": s1.number_input("LH Housing", value=default_data['lh']['ho'] if default_data else 0), 
+          "jc": s1.number_input(f"LH {jc_label}", value=default_data['lh']['jc'] if default_data else 0)}
+    rh = {"op": s2.number_input("RH Opening", value=default_data['rh']['op'] if default_data else 0), 
+          "ho": s2.number_input("RH Housing", value=default_data['rh']['ho'] if default_data else 0), 
+          "jc": s2.number_input(f"RH {jc_label}", value=default_data['rh']['jc'] if default_data else 0)}
+    
+    st.write("---")
+    locs = ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]
+    loc_inputs = {}
     for loc in locs:
-        st.write(f"**{loc}**")
-        g1, l1 = st.columns(2)
-        loc_data[(loc, "G")] = g1.text_input(f"Gauge ({loc})", key=f"g_{loc}", placeholder="e.g. +2mm")
-        loc_data[(loc, "L")] = l1.text_input(f"Level ({loc})", key=f"l_{loc}", placeholder="e.g. -1mm")
+        g, l = st.columns(2)
+        val_g = default_data['locs'][loc]['g'] if default_data else ""
+        val_l = default_data['locs'][loc]['l'] if default_data else ""
+        loc_inputs[loc] = {"g": g.text_input(f"Gauge {loc}", value=val_g), "l": l.text_input(f"Level {loc}", value=val_l)}
+    
+    remarks = st.text_area("Remarks", value=default_data['rem'] if default_data else "")
+    submitted = st.form_submit_button("Save Changes" if edit_index is not None else "Add Entry")
 
-    remarks = st.text_area("Remarks")
-    submitted = st.form_submit_button("Save Inspection")
-
-# 3. Data Processing
-if submitted and pt_no:
-    rows = []
-    # LH Side Row
-    rows.append({
-        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "LH", "OPENING": lh_op, "HOUSING": lh_ho, 
-        "JOH/CLR": lh_jc, "LOC": "N/A", "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
-    })
-    # RH Side Row
-    rows.append({
-        "PT NO.": pt_no, "TYPE": point_type, "SIDE": "RH", "OPENING": rh_op, "HOUSING": rh_ho, 
-        "JOH/CLR": rh_jc, "LOC": "N/A", "GAUGE": "N/A", "LEVEL": "N/A", "REMARKS": remarks
-    })
-    # Location rows (Gauge/Level only)
-    for loc in locs:
-        rows.append({
-            "PT NO.": pt_no, "TYPE": point_type, "SIDE": "N/A", "OPENING": "N/A", "HOUSING": "N/A", 
-            "JOH/CLR": "N/A", "LOC": loc, "GAUGE": loc_data[(loc, "G")], 
-            "LEVEL": loc_data[(loc, "L")], "REMARKS": remarks
-        })
-        
-    st.session_state.data = pd.concat([st.session_state.data, pd.DataFrame(rows)], ignore_index=True)
-    st.success(f"Point {pt_no} saved!")
+if submitted:
+    new_entry = {"pt": pt_no, "type": p_type, "lh": lh, "rh": rh, "locs": loc_inputs, "rem": remarks}
+    if edit_index is not None:
+        st.session_state.data[edit_index] = new_entry
+        st.session_state["edit_index"] = None
+    else:
+        st.session_state.data.append(new_entry)
     st.rerun()
 
-# 4. Summary & Export
-st.subheader("Inspection Summary")
-st.data_editor(st.session_state.data, num_rows="dynamic")
-
-# Excel Export
-def to_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False)
-    return output.getvalue()
-
-st.download_button("Download Excel", data=to_excel(st.session_state.data), file_name="Inspection_Log.xlsx")
+# 3. List view for selection
+st.subheader("Saved Records")
+for i, entry in enumerate(st.session_state.data):
+    c1, c2 = st.columns([0.8, 0.2])
+    c1.write(f"Point {entry['pt']} - {entry['type']}")
+    if c2.button("Edit", key=f"edit_{i}"):
+        st.session_state["edit_index"] = i
+        st.rerun()
