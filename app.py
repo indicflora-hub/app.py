@@ -3,7 +3,7 @@ import pandas as pd
 from fpdf import FPDF
 
 # -------------------------------------------------
-# PAGE CONFIG
+# PAGE CONFIG (Defined only once)
 # -------------------------------------------------
 st.set_page_config(page_title="Joint Point & Crossing Inspection", layout="wide")
 st.title("Joint Point & Crossing Inspection System")
@@ -29,14 +29,14 @@ with st.form("inspection_form"):
     col_lh, col_rh = st.columns(2)
     with col_lh:
         st.markdown("### LH Side")
-        lh_opening = st.number_input("LH Opening", min_value=0, step=1, format="%d")
-        lh_housing = st.number_input("LH Housing", min_value=0, step=1, format="%d")
-        lh_joh = st.number_input(f"LH {label_name}", min_value=0, step=1, format="%d")
+        lh_opening = st.number_input("LH Opening", min_value=0.0, step=0.1, format="%.2f")
+        lh_housing = st.number_input("LH Housing", min_value=0.0, step=0.1, format="%.2f")
+        lh_joh = st.number_input(f"LH {label_name}", min_value=0.0, step=0.1, format="%.2f")
     with col_rh:
         st.markdown("### RH Side")
-        rh_opening = st.number_input("RH Opening", min_value=0, step=1, format="%d")
-        rh_housing = st.number_input("RH Housing", min_value=0, step=1, format="%d")
-        rh_joh = st.number_input(f"RH {label_name}", min_value=0, step=1, format="%d")
+        rh_opening = st.number_input("RH Opening", min_value=0.0, step=0.1, format="%.2f")
+        rh_housing = st.number_input("RH Housing", min_value=0.0, step=0.1, format="%.2f")
+        rh_joh = st.number_input(f"RH {label_name}", min_value=0.0, step=0.1, format="%.2f")
 
     st.subheader("Gauge & Level")
     locations = ["150 MM", "5TH SLEEPER", "9TH SLEEPER"]
@@ -59,242 +59,8 @@ with st.form("inspection_form"):
         st.success("Record Saved!")
         st.rerun()
 
-import streamlit as st
-import pandas as pd
-from fpdf import FPDF
-
-# ---------------------------------------------------
-# PAGE CONFIG
-# ---------------------------------------------------
-st.set_page_config(
-    page_title="Joint Point & Crossing Inspection",
-    layout="wide"
-)
-
-st.title("Joint Point & Crossing Inspection System")
-
-# ---------------------------------------------------
-# SESSION STORAGE
-# ---------------------------------------------------
-if "data" not in st.session_state:
-    st.session_state.data = []
-
-# ---------------------------------------------------
-# ENTRY FORM
-# ---------------------------------------------------
-st.header("Enter Inspection Details")
-
-with st.form("inspection_form"):
-
-    # Basic Details
-    c1, c2 = st.columns(2)
-
-    point_no = c1.text_input("Point No.")
-
-    point_type = c2.radio(
-        "Type",
-        ["TWS", "IRS"],
-        horizontal=True
-    )
-
-    label_name = "JOH" if point_type == "TWS" else "Clearance"
-
-    # ---------------------------------------------------
-    # LH & RH DETAILS
-    # ---------------------------------------------------
-    st.subheader("Measurement Details")
-
-    col_lh, col_rh = st.columns(2)
-
-    with col_lh:
-        st.markdown("### LH Side")
-
-        lh_opening = st.number_input(
-            "LH Opening",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-        lh_horizontal = st.number_input(
-            "LH Horizontal",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-        lh_joh = st.number_input(
-            f"LH {label_name}",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-    with col_rh:
-        st.markdown("### RH Side")
-
-        rh_opening = st.number_input(
-            "RH Opening",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-        rh_horizontal = st.number_input(
-            "RH Horizontal",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-        rh_joh = st.number_input(
-            f"RH {label_name}",
-            min_value=0.0,
-            format="%.2f"
-        )
-
-    # ---------------------------------------------------
-    # GAUGE & LEVEL
-    # ---------------------------------------------------
-    st.subheader("Gauge & Level")
-
-    locations = [
-        "150 MM",
-        "5TH SLEEPER",
-        "9TH SLEEPER"
-    ]
-
-    gauge_level_data = {}
-
-    for loc in locations:
-
-        g_col, l_col = st.columns(2)
-
-        gauge = g_col.text_input(f"Gauge at {loc}")
-
-        level = l_col.text_input(f"Level at {loc}")
-
-        gauge_level_data[loc] = {
-            "gauge": gauge,
-            "level": level
-        }
-
-    # ---------------------------------------------------
-    # REMARKS
-    # ---------------------------------------------------
-    remarks = st.text_area("Remarks")
-
-    # ---------------------------------------------------
-    # SAVE BUTTON
-    # ---------------------------------------------------
-    submitted = st.form_submit_button("Save Record")
-
-    if submitted:
-
-        record = {
-            "Point No": point_no,
-            "Type": point_type,
-
-            "LH Opening": lh_opening,
-            "LH Horizontal": lh_horizontal,
-            f"LH {label_name}": lh_joh,
-
-            "RH Opening": rh_opening,
-            "RH Horizontal": rh_horizontal,
-            f"RH {label_name}": rh_joh,
-
-            "Gauge_Level": gauge_level_data,
-
-            "Remarks": remarks
-        }
-
-        st.session_state.data.append(record)
-
-        st.success("Record Saved Successfully")
-
-# ---------------------------------------------------
-# DISPLAY RECORDS
-# ---------------------------------------------------
-st.header("Saved Records")
-
-if len(st.session_state.data) == 0:
-
-    st.info("No records available.")
-
-else:
-
-    for i, record in enumerate(st.session_state.data):
-
-        with st.expander(
-            f"Point No: {record['Point No']} | Type: {record['Type']}",
-            expanded=False
-        ):
-
-            c1, c2 = st.columns(2)
-
-            # LH Details
-            with c1:
-                st.markdown("### LH Details")
-
-                st.write(
-                    f"Opening : {record['LH Opening']}"
-                )
-
-                st.write(
-                    f"Horizontal : {record['LH Horizontal']}"
-                )
-
-                key_lh = [
-                    k for k in record.keys()
-                    if "LH JOH" in k or "LH Clearance" in k
-                ][0]
-
-                st.write(
-                    f"{key_lh} : {record[key_lh]}"
-                )
-
-            # RH Details
-            with c2:
-                st.markdown("### RH Details")
-
-                st.write(
-                    f"Opening : {record['RH Opening']}"
-                )
-
-                st.write(
-                    f"Horizontal : {record['RH Horizontal']}"
-                )
-
-                key_rh = [
-                    k for k in record.keys()
-                    if "RH JOH" in k or "RH Clearance" in k
-                ][0]
-
-                st.write(
-                    f"{key_rh} : {record[key_rh]}"
-                )
-
-            # Gauge & Level
-            st.markdown("### Gauge & Level")
-
-            for loc, values in record["Gauge_Level"].items():
-
-                st.write(
-                    f"{loc} → Gauge: {values['gauge']} | "
-                    f"Level: {values['level']}"
-                )
-
-            # Remarks
-            st.markdown("### Remarks")
-
-            st.write(record["Remarks"])
-
-            # Delete Button
-            if st.button(
-                f"Delete Record {i+1}",
-                key=f"delete_{i}"
-            ):
-
-                st.session_state.data.pop(i)
-
-                st.rerun()
 # -------------------------------------------------
-# VIEW & EDIT RECORDS
+# VIEW & PDF CREATION
 # -------------------------------------------------
 st.header("Saved Records")
 if not st.session_state.data:
@@ -307,15 +73,13 @@ else:
                 st.session_state.data.pop(i)
                 st.rerun()
 
-# -------------------------------------------------
-# PDF CREATION
-# -------------------------------------------------
 def create_pdf(records):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(190, 10, "JOINT POINT & CROSSING INSPECTION", border=1, ln=True, align="C")
     pdf.ln(5)
+    
     pdf.set_font("Arial", "B", 8)
     headers = ["PT NO.", "SIDE", "OPENING", "HOUSING", "CLR/JOH", "GAUGE LOC", "GAUGE", "LEVEL LOC", "LEVEL"]
     widths = [18, 10, 18, 18, 20, 25, 15, 25, 15]
@@ -325,40 +89,30 @@ def create_pdf(records):
     
     pdf.set_font("Arial", "", 8)
     for rec in records:
-        lh_key = [k for k in rec.keys() if "LH JOH" in k or "LH Clearance" in k][0]
-        rh_key = [k for k in rec.keys() if "RH JOH" in k or "RH Clearance" in k][0]
+        # Dynamic keys for JOH/Clearance
+        lh_keys = [k for k in rec.keys() if "LH JOH" in k or "LH Clearance" in k]
+        rh_keys = [k for k in rec.keys() if "RH JOH" in k or "RH Clearance" in k]
+        lh_val = rec[lh_keys[0]] if lh_keys else "N/A"
+        rh_val = rec[rh_keys[0]] if rh_keys else "N/A"
         locs = list(rec["Gauge_Level"].keys())
         
-        # LH Row
-        pdf.cell(18, 10, str(rec['Point No']), border=1)
-        pdf.cell(10, 10, "LH", border=1, align="C")
-        pdf.cell(18, 10, str(rec['LH Opening']), border=1, align="C")
-        pdf.cell(18, 10, str(rec['LH Housing']), border=1, align="C")
-        pdf.cell(20, 10, str(rec[lh_key]), border=1, align="C")
-        pdf.cell(25, 10, locs[0], border=1)
-        pdf.cell(15, 10, str(rec['Gauge_Level'][locs[0]]['gauge']), border=1, align="C")
-        pdf.cell(25, 10, locs[0], border=1)
-        pdf.cell(15, 10, str(rec['Gauge_Level'][locs[0]]['level']), border=1, align="C")
-        pdf.ln()
-        
-        # RH Row
-        pdf.cell(18, 10, "", border=1)
-        pdf.cell(10, 10, "RH", border=1, align="C")
-        pdf.cell(18, 10, str(rec['RH Opening']), border=1, align="C")
-        pdf.cell(18, 10, str(rec['RH Housing']), border=1, align="C")
-        pdf.cell(20, 10, str(rec[rh_key]), border=1, align="C")
-        pdf.cell(25, 10, locs[1], border=1)
-        pdf.cell(15, 10, str(rec['Gauge_Level'][locs[1]]['gauge']), border=1, align="C")
-        pdf.cell(25, 10, locs[1], border=1)
-        pdf.cell(15, 10, str(rec['Gauge_Level'][locs[1]]['level']), border=1, align="C")
-        pdf.ln()
-        
-        # 3rd Sleeper
-        pdf.cell(18, 10, "", border=1)
-        pdf.cell(10, 10, "", border=1)
-        pdf.cell(18, 10, "", border=1)
-        pdf.cell(18, 10, "", border=1)
-        pdf.cell(20, 10, "", border=1)
+        # Helper to draw row
+        def draw_row(side, opening, housing, j_val, loc_key):
+            pdf.cell(18, 10, str(rec['Point No']), border=1)
+            pdf.cell(10, 10, side, border=1, align="C")
+            pdf.cell(18, 10, str(opening), border=1, align="C")
+            pdf.cell(18, 10, str(housing), border=1, align="C")
+            pdf.cell(20, 10, str(j_val), border=1, align="C")
+            pdf.cell(25, 10, loc_key, border=1)
+            pdf.cell(15, 10, str(rec['Gauge_Level'][loc_key]['gauge']), border=1, align="C")
+            pdf.cell(25, 10, loc_key, border=1)
+            pdf.cell(15, 10, str(rec['Gauge_Level'][loc_key]['level']), border=1, align="C")
+            pdf.ln()
+
+        draw_row("LH", rec['LH Opening'], rec['LH Housing'], lh_val, locs[0])
+        draw_row("RH", rec['RH Opening'], rec['RH Housing'], rh_val, locs[1])
+        # 3rd row for 3rd sleeper
+        pdf.cell(84, 10, "", border=1)
         pdf.cell(25, 10, locs[2], border=1)
         pdf.cell(15, 10, str(rec['Gauge_Level'][locs[2]]['gauge']), border=1, align="C")
         pdf.cell(25, 10, locs[2], border=1)
