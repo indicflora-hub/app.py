@@ -2,6 +2,63 @@ import streamlit as st
 import pandas as pd
 from fpdf import FPDF
 import io
+import streamlit as st
+import pandas as pd
+from fpdf import FPDF
+import io
+
+st.set_page_config(layout="wide")
+st.title("Rail Inspection Logger")
+
+# Initialize Session State
+if 'data' not in st.session_state:
+    st.session_state.data = pd.DataFrame(columns=["PT NO.", "SIDE", "OPENING", "HOUSING", "CLEARANCE", "REMARKS"])
+if 'master_points' not in st.session_state:
+    st.session_state.master_points = ["101 (TWS)", "102", "104 (TWS)", "105 (TWS)", "107", "108"]
+
+# Entry Form
+st.header("Inspection Entry")
+with st.form("inspection_form"):
+    # Allow selection or manual entry
+    selected_pt = st.selectbox("Select Point No.", [""] + st.session_state.master_points)
+    manual_pt = st.text_input("Or Type New Point No. (If not in list)")
+    
+    # Logic to prioritize manual entry
+    pt_no = manual_pt if manual_pt else selected_pt
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("LH Side")
+        lh_opening = st.number_input("LH Opening", step=1, key="lh_op")
+        lh_housing = st.number_input("LH Housing", step=1, key="lh_ho")
+        lh_clearance = st.number_input("LH Clearance", step=1, key="lh_cl")
+        lh_remarks = st.text_input("LH Remarks", key="lh_re")
+        
+    with col2:
+        st.subheader("RH Side")
+        rh_opening = st.number_input("RH Opening", step=1, key="rh_op")
+        rh_housing = st.number_input("RH Housing", step=1, key="rh_ho")
+        rh_clearance = st.number_input("RH Clearance", step=1, key="rh_cl")
+        rh_remarks = st.text_input("RH Remarks", key="rh_re")
+        
+    submitted = st.form_submit_button("Save Both Sides")
+
+if submitted and pt_no:
+    # Update Master List if it's a new point
+    if pt_no not in st.session_state.master_points:
+        st.session_state.master_points.append(pt_no)
+    
+    new_data = [
+        {"PT NO.": pt_no, "SIDE": "LH", "OPENING": int(lh_opening), "HOUSING": int(lh_housing), "CLEARANCE": int(lh_clearance), "REMARKS": lh_remarks},
+        {"PT NO.": pt_no, "SIDE": "RH", "OPENING": int(rh_opening), "HOUSING": int(rh_housing), "CLEARANCE": int(rh_clearance), "REMARKS": rh_remarks}
+    ]
+    st.session_state.data = pd.concat([st.session_state.data, pd.DataFrame(new_data)], ignore_index=True)
+    st.success(f"Data for Point {pt_no} saved!")
+    st.rerun() # Refresh to update the dropdown
+
+# Summary Table
+st.subheader("Inspection Summary")
+st.session_state.data = st.data_editor(st.session_state.data, num_rows="dynamic")
 
 st.set_page_config(layout="wide")
 st.title("Rail Inspection Logger")
