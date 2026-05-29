@@ -67,7 +67,8 @@ with st.form("inspection_form"):
             "LH Housing",
             min_value=0,
             step=1,
-            format="%d"
+            format="%d",
+            key="lh_housing"
         )
 
         lh_joh = st.number_input(
@@ -93,7 +94,8 @@ with st.form("inspection_form"):
             "RH Housing",
             min_value=0,
             step=1,
-            format="%d"
+            format="%d",
+            key="rh_housing"
         )
 
         rh_joh = st.number_input(
@@ -303,7 +305,7 @@ def create_pdf(records):
         "LEVEL"
     ]
 
-    widths = [20, 15, 20, 20, 25, 30, 15, 30, 15]
+    widths = [18, 12, 18, 18, 22, 25, 15, 25, 15]
 
     for h, w in zip(headers, widths):
         pdf.cell(w, 10, h, border=1, align="C")
@@ -332,7 +334,7 @@ def create_pdf(records):
         # -----------------------------------------
         # LH ROW
         # -----------------------------------------
-        pdf.cell(20, 10, f"{rec['Point No']} ({rec['Type']})", border=1)
+        pdf.cell(18, 10, str(rec['Point No']), border=1)
         pdf.cell(15, 10, "LH", border=1, align="C")
         pdf.cell(20, 10, str(rec['LH Opening']), border=1, align="C")
         pdf.cell(20, 10, str(rec['LH Housing']), border=1, align="C")
