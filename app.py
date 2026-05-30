@@ -396,7 +396,7 @@ def create_pdf(records):
         "LEVEL"
     ]
 
-    widths = [18, 12, 18, 18, 22, 25, 15, 25, 15]
+    widths = [20, 15, 20, 20, 25, 30, 15, 30, 15]
 
     for h, w in zip(headers, widths):
         pdf.cell(w, 10, h, border=1, align="C")
@@ -425,7 +425,7 @@ def create_pdf(records):
         # -----------------------------------------
         # LH ROW
         # -----------------------------------------
-        pdf.cell(18, 10, str(rec['Point No']), border=1)
+        pdf.cell(20, 10, str(rec['Point No']), border=1)
         pdf.cell(15, 10, "LH", border=1, align="C")
         pdf.cell(20, 10, str(rec['LH Opening']), border=1, align="C")
         pdf.cell(20, 10, str(rec['LH Housing']), border=1, align="C")
