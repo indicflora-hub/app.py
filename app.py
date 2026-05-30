@@ -40,7 +40,7 @@ with st.form("inspection_form"):
         horizontal=True
     )
 
-    label_name = "JOH" if point_type == "TWS" else "Clearance"
+    label_name = "JOH/CLS" if point_type == "TWS" else "Clearance"
 
     # ---------------------------------------------
     # LH & RH DETAILS
