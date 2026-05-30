@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Joint Point & Crossing Inspection System")
+st.title("Samuktala Road Joint Point & Crossing Inspection System")
 
 # -------------------------------------------------
 # SESSION STORAGE
